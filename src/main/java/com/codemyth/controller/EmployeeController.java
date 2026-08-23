@@ -40,11 +40,10 @@ public class EmployeeController {
 	}
 
 	@GetMapping("/employees")
-	public ResponseEntity<List<Employee>> getAllEmployees() {
-		List<Employee> empList = new ArrayList<>();
-		employeeRepository.findAll().forEach(empList::add);
+	public ResponseEntity<List<EmployeeResponse>> getAllEmployees() {
+		List<EmployeeResponse> empList = employeeService.getAllEmployees();
 
-		return new ResponseEntity<List<Employee>>(empList, HttpStatus.OK);
+		return new ResponseEntity<List<EmployeeResponse>>(empList, HttpStatus.OK);
 
 	}
 
