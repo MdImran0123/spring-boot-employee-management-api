@@ -48,30 +48,16 @@ public class EmployeeController {
 	}
 
 	@GetMapping("/employees/{empid}")
-	public ResponseEntity<Employee> getEmployeeById(@PathVariable Long empid) {
-		Optional<Employee> emp = employeeRepository.findById(empid);
-		if (emp.isPresent()) {
-			return ResponseEntity.ok(emp.get());
-		} else {
-			return new ResponseEntity<Employee>(HttpStatus.NOT_FOUND);
-		}
+	public ResponseEntity<EmployeeResponse> getEmployeeById(@PathVariable Long empid) {
+		EmployeeResponse emp = employeeService.getEmployeeById(empid);
+		return ResponseEntity.ok(emp);
 
 	}
 
 	@PutMapping("/employees/{empid}")
-	public ResponseEntity<?> updateEmployee(@PathVariable long empid, @RequestBody Employee employee) {
-		Optional<Employee> empDetails = employeeRepository.findById(empid);
-		if (empDetails.isEmpty()) {
-			return new ResponseEntity<Employee>(HttpStatus.NOT_FOUND);
-		}
-		Employee existEmployee = empDetails.get();
-		existEmployee.setEmp_name(employee.getEmp_name());
-		existEmployee.setEmp_age(employee.getEmp_age());
-		existEmployee.setEmp_city(employee.getEmp_city());
-		existEmployee.setEmp_salary(employee.getEmp_salary());
-		Employee employeeDetail = employeeRepository.save(existEmployee);
-
-		return new ResponseEntity<Employee>(employeeDetail, HttpStatus.OK);
+	public ResponseEntity<?> updateEmployee(@PathVariable long empid, @Valid @RequestBody Employee employee) {
+		EmployeeResponse empDetails = employeeService.updateEmployee(empid, employee);
+			return ResponseEntity.ok(empDetails);
 	}
 
 	@DeleteMapping("/employees/{empid}")

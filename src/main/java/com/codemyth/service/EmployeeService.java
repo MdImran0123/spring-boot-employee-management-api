@@ -2,6 +2,8 @@ package com.codemyth.service;
 
 import java.util.List;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.codemyth.dto.EmployeeRequest;
@@ -38,6 +40,35 @@ public class EmployeeService {
 				.map(this::mapToResponse)
 				.toList();
 
+	}
+
+	// Get Employee by Id
+	public EmployeeResponse getEmployeeById(Long empId){
+		Employee employee = employeeRepository.findById(empId)
+				.orElseThrow(() -> 
+				new RuntimeException(
+						"Employee not found with Id: "+ empId
+						)
+				);
+		return mapToResponse(employee);
+				
+	}
+	
+	//Update Employee Details
+	public EmployeeResponse updateEmployee(Long empId, Employee request) {
+		Employee employee = employeeRepository.findById(empId)
+				.orElseThrow(() -> 
+				new RuntimeException("Employee not found with Id: " + empId
+						)
+				);
+		employee.setEmp_name(employee.getEmp_name());
+		employee.setEmp_age(employee.getEmp_age());
+		employee.setEmp_city(employee.getEmp_city());
+		employee.setEmp_salary(employee.getEmp_salary());
+		Employee employeeDetail = employeeRepository.save(employee);
+
+		return mapToResponse(employeeDetail);
+		
 	}
 
 	// Entity -> Response DTO
