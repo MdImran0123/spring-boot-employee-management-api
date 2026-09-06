@@ -1,22 +1,19 @@
 package com.codemyth.repository;
 
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
+import java.math.BigDecimal;
 import java.util.List;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
 import com.codemyth.model.Employee;
 
 public interface EmployeeRepository extends JpaRepository<Employee, Long> {
 
-	@Query(value = "SELECT * FROM employee e WHERE e.emp_city = :empcity", nativeQuery = true)
-	List<Employee> findByEmpCity(@Param("empcity") String empcity);
+	List<Employee> findByEmpCityContainingIgnoreCase(String empCity);
 
-	@Query(value = "SELECT * FROM employee e WHERE e.emp_age = :empage", nativeQuery = true)
-	List<Employee> findByEmpAge(@Param("empage") int empage);
+	List<Employee> findByEmpAge(int empAge);
 
-	@Query(value = "SELECT * FROM employee e WHERE e.emp_salary = :empsalary", nativeQuery = true)
-	List<Employee> findByEmpSalary(@Param("empsalary") float empsalary);
+	List<Employee> findByEmpSalaryBetween(BigDecimal min, BigDecimal max);
 
-	@Query(value = "SELECT * FROM employee e WHERE e.emp_name LIKE CONCAT('%', :empname, '%')", nativeQuery = true)
-	List<Employee> findByEmpName(@Param("empname") String empname);
+	List<Employee> findByEmpNameContainingIgnoreCase(String empName);
 }

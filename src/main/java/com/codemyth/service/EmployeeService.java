@@ -1,13 +1,13 @@
 package com.codemyth.service;
 
+import java.math.BigDecimal;
 import java.util.List;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.codemyth.dto.EmployeeRequest;
 import com.codemyth.dto.EmployeeResponse;
+import com.codemyth.exception.EmployeeNotFoundException;
 import com.codemyth.model.Employee;
 import com.codemyth.repository.EmployeeRepository;
 
@@ -23,10 +23,10 @@ public class EmployeeService {
 	public EmployeeResponse createEmployee(EmployeeRequest request) {
 		Employee employee = new Employee();
 
-		employee.setEmp_name(request.getEmp_name());
-		employee.setEmp_age(request.getEmp_age());
-		employee.setEmp_city(request.getEmp_city());
-		employee.setEmp_salary(request.getEmp_salary());
+		employee.setEmpName(request.getEmpName());
+		employee.setEmpAge(request.getEmpAge());
+		employee.setEmpCity(request.getEmpCity());
+		employee.setEmpSalary(request.getEmpSalary());
 
 		Employee savedEmployee = employeeRepository.save(employee);
 
@@ -35,46 +35,71 @@ public class EmployeeService {
 
 	// Get All Employees
 	public List<EmployeeResponse> getAllEmployees() {
-		return employeeRepository.findAll()
-				.stream()
-				.map(this::mapToResponse)
-				.toList();
+		return employeeRepository.findAll().stream().map(this::mapToResponse).toList();
 
 	}
 
 	// Get Employee by Id
-	public EmployeeResponse getEmployeeById(Long empId){
+	public EmployeeResponse getEmployeeById(Long empId) {
 		Employee employee = employeeRepository.findById(empId)
-				.orElseThrow(() -> 
-				new RuntimeException(
-						"Employee not found with Id: "+ empId
-						)
-				);
+				.orElseThrow(() -> new EmployeeNotFoundException(empId));
 		return mapToResponse(employee);
-				
+
 	}
-	
-	//Update Employee Details
-	public EmployeeResponse updateEmployee(Long empId, Employee request) {
+
+	// Update Employee Details
+	public EmployeeResponse updateEmployee(Long empId, EmployeeRequest request) {
 		Employee employee = employeeRepository.findById(empId)
-				.orElseThrow(() -> 
-				new RuntimeException("Employee not found with Id: " + empId
-						)
-				);
-		employee.setEmp_name(employee.getEmp_name());
-		employee.setEmp_age(employee.getEmp_age());
-		employee.setEmp_city(employee.getEmp_city());
-		employee.setEmp_salary(employee.getEmp_salary());
+				.orElseThrow(() -> new EmployeeNotFoundException(empId));
+		employee.setEmpName(request.getEmpName());
+		employee.setEmpAge(request.getEmpAge());
+		employee.setEmpCity(request.getEmpCity());
+		employee.setEmpSalary(request.getEmpSalary());
 		Employee employeeDetail = employeeRepository.save(employee);
 
 		return mapToResponse(employeeDetail);
-		
+
+	}
+
+	// Delete Employee By Id
+	public void deleteById(Long empId) {
+		if (!employeeRepository.existsById(empId)) {
+			throw new EmployeeNotFoundException(empId);
+		}
+		employeeRepository.deleteById(empId);
+	}
+
+	// Delete All Employee Details
+	public void deleteAllEmployees() {
+		employeeRepository.deleteAll();
+	}
+
+	// Get Employee Details By City
+	public List<EmployeeResponse> getEmployeeByCity(String city) {
+		return employeeRepository.findByEmpCityContainingIgnoreCase(city).stream().map(this::mapToResponse).toList();
+	}
+
+	// Get Employee Details By Age
+	public List<EmployeeResponse> getEmployeeByAge(int empAge) {
+		return employeeRepository.findByEmpAge(empAge).stream().map(this::mapToResponse).toList();
+	}
+
+	// Get Employee Details By Salary
+	public List<EmployeeResponse> getEmployeeBySalary(BigDecimal empSalary) {
+		BigDecimal min = empSalary.setScale(2, java.math.RoundingMode.HALF_UP);
+		BigDecimal max = min;
+		return employeeRepository.findByEmpSalaryBetween(min, max).stream().map(this::mapToResponse).toList();
+	}
+
+	// Get Employee Details By Name
+	public List<EmployeeResponse> getEmployeeByName(String empName) {
+		return employeeRepository.findByEmpNameContainingIgnoreCase(empName).stream().map(this::mapToResponse).toList();
 	}
 
 	// Entity -> Response DTO
 	private EmployeeResponse mapToResponse(Employee employee) {
 
-		return new EmployeeResponse(employee.getEmp_id(), employee.getEmp_name(), employee.getEmp_age(),
-				employee.getEmp_city(), employee.getEmp_salary());
+		return new EmployeeResponse(employee.getEmpId(), employee.getEmpName(), employee.getEmpAge(),
+				employee.getEmpCity(), employee.getEmpSalary());
 	}
 }

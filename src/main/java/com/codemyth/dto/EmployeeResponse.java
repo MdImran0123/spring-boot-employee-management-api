@@ -1,68 +1,69 @@
 package com.codemyth.dto;
 
+import java.math.BigDecimal;
+
 public class EmployeeResponse {
-	private Long emp_id;
-	private String emp_name;
-	private int emp_age;
-	private String emp_city;
-	private float emp_salary;
+
+	private Long empId;
+	private String empName;
+	private int empAge;
+	private String empCity;
+	private BigDecimal empSalary;
 
 	public EmployeeResponse() {
-
 	}
 
-	public EmployeeResponse(Long emp_id, String emp_name, int emp_age, String emp_city, float emp_salary) {
-		this.emp_id = emp_id;
-		this.emp_age = emp_age;
-		this.emp_city = emp_city;
-		this.emp_name = emp_name;
-		this.emp_salary = emp_salary;
-
+	public EmployeeResponse(Long empId, String empName, int empAge, String empCity, BigDecimal empSalary) {
+		this.empId = empId;
+		this.empName = empName;
+		this.empAge = empAge;
+		this.empCity = empCity;
+		this.empSalary = empSalary;
 	}
 
-	public Long getEmp_id() {
-		return emp_id;
+	public Long getEmpId() {
+		return empId;
 	}
 
-	public void setEmp_id(Long emp_id) {
-		this.emp_id = emp_id;
+	public void setEmpId(Long empId) {
+		this.empId = empId;
 	}
 
-	public String getEmp_name() {
-		return emp_name;
+	public String getEmpName() {
+		return empName;
 	}
 
-	public void setEmp_name(String emp_name) {
-		this.emp_name = emp_name;
+	public void setEmpName(String empName) {
+		this.empName = empName;
 	}
 
-	public int getEmp_age() {
-		return emp_age;
+	public int getEmpAge() {
+		return empAge;
 	}
 
-	public void setEmp_age(int emp_age) {
-		this.emp_age = emp_age;
+	public void setEmpAge(int empAge) {
+		this.empAge = empAge;
 	}
 
-	public String getEmp_city() {
-		return emp_city;
+	public String getEmpCity() {
+		return empCity;
 	}
 
-	public void setEmp_city(String emp_city) {
-		this.emp_city = emp_city;
+	public void setEmpCity(String empCity) {
+		this.empCity = empCity;
 	}
 
-	public float getEmp_salary() {
-		return emp_salary;
+	public BigDecimal getEmpSalary() {
+		return empSalary;
 	}
 
-	public void setEmp_salary(float emp_salary) {
-		this.emp_salary = emp_salary;
+	public void setEmpSalary(BigDecimal empSalary) {
+		this.empSalary = empSalary;
 	}
 
 	@Override
 	public String toString() {
-		return "EmployeeResponse [emp_id=" + emp_id + ", emp_name=" + emp_name + ", emp_age=" + emp_age + ", emp_city="
-				+ emp_city + ", emp_salary=" + emp_salary + "]";
+		return "EmployeeResponse{" + "empId=" + empId + ", empName='" + empName + '\'' + ", empAge=" + empAge
+				+ ", empCity='" + empCity + '\'' + ", empSalary=" + empSalary + '}';
 	}
 }

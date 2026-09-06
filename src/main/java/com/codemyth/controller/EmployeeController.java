@@ -1,8 +1,7 @@
 package com.codemyth.controller;
 
-import java.util.ArrayList;
+import java.math.BigDecimal;
 import java.util.List;
-import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,8 +16,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.codemyth.dto.EmployeeRequest;
 import com.codemyth.dto.EmployeeResponse;
-import com.codemyth.model.Employee;
-import com.codemyth.repository.EmployeeRepository;
 import com.codemyth.service.EmployeeService;
 
 import jakarta.validation.Valid;
@@ -34,8 +31,8 @@ public class EmployeeController {
 	}
 
 	@PostMapping("/employees")
-	public ResponseEntity<EmployeeResponse> createEmployee(@Valid @RequestBody EmployeeRequest employee) {
-		EmployeeResponse employeeDetails = employeeService.createEmployee(employee);
+	public ResponseEntity<EmployeeResponse> createEmployee(@Valid @RequestBody EmployeeRequest request) {
+		EmployeeResponse employeeDetails = employeeService.createEmployee(request);
 		return ResponseEntity.status(HttpStatus.CREATED).body(employeeDetails);
 	}
 
@@ -47,76 +44,56 @@ public class EmployeeController {
 
 	}
 
-	@GetMapping("/employees/{empid}")
-	public ResponseEntity<EmployeeResponse> getEmployeeById(@PathVariable Long empid) {
-		EmployeeResponse emp = employeeService.getEmployeeById(empid);
+	@GetMapping("/employees/{empId}")
+	public ResponseEntity<EmployeeResponse> getEmployeeById(@PathVariable Long empId) {
+		EmployeeResponse emp = employeeService.getEmployeeById(empId);
 		return ResponseEntity.ok(emp);
 
 	}
 
-	@PutMapping("/employees/{empid}")
-	public ResponseEntity<?> updateEmployee(@PathVariable long empid, @Valid @RequestBody Employee employee) {
-		EmployeeResponse empDetails = employeeService.updateEmployee(empid, employee);
-			return ResponseEntity.ok(empDetails);
+	@PutMapping("/employees/{empId}")
+	public ResponseEntity<EmployeeResponse> updateEmployeeById(@PathVariable Long empId, @Valid @RequestBody EmployeeRequest request) {
+		EmployeeResponse empDetails = employeeService.updateEmployee(empId, request);
+		return ResponseEntity.ok(empDetails);
 	}
 
-	@DeleteMapping("/employees/{empid}")
-	public String deleteEmployeeById(@PathVariable long empid) {
-		Optional<Employee> empDetails = employeeRepository.findById(empid);
-		if (empDetails.isPresent()) {
-			employeeRepository.deleteById(empid);
-			return "The Employee record has been deleted successfully.";
-		} else {
-			return "Employee record does not exist.";
-		}
+	@DeleteMapping("/employees/{empId}")
+	public ResponseEntity<Void> deleteById(@PathVariable Long empId) {
+		employeeService.deleteById(empId);
+		return ResponseEntity.noContent().build();
+
 	}
 
 	@DeleteMapping("/employees")
-	public String deleteAllEmployees() {
-		employeeRepository.deleteAll();
-		return "All Employee details have been deleted.";
+	public ResponseEntity<Void> deleteAllEmployees() {
+		employeeService.deleteAllEmployees();
+		return ResponseEntity.noContent().build();
 	}
 
-	@GetMapping("/employees/city/{empcity}")
-	public ResponseEntity<List<Employee>> getEmployeeByCity(@PathVariable String empcity) {
-		List<Employee> empList = employeeRepository.findByEmpCity(empcity);
-		if (empList.isEmpty()) {
-			return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-		} else {
-			return new ResponseEntity<>(empList, HttpStatus.OK);
-		}
+	@GetMapping("/employees/city/{empCity}")
+	public ResponseEntity<List<EmployeeResponse>> getEmployeeByCity(@PathVariable String empCity) {
+		List<EmployeeResponse> employeeList = employeeService.getEmployeeByCity(empCity);
+		return ResponseEntity.ok(employeeList);
 	}
 
-	@GetMapping("/employees/age/{empage}")
-	public ResponseEntity<List<Employee>> getEmployeeByAge(@PathVariable int empage) {
-		List<Employee> empList = employeeRepository.findByEmpAge(empage);
-		if (empList.isEmpty()) {
-			return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-		} else {
-			return new ResponseEntity<>(empList, HttpStatus.OK);
-		}
+	@GetMapping("/employees/age/{empAge}")
+	public ResponseEntity<List<EmployeeResponse>> getEmployeeByAge(@PathVariable int empAge) {
+		List<EmployeeResponse> employeeList = employeeService.getEmployeeByAge(empAge);
+		return ResponseEntity.ok(employeeList);
 
 	}
 
-	@GetMapping("/employees/salary/{empsalary}")
-	public ResponseEntity<List<Employee>> getEmployeeBySalary(@PathVariable float empsalary) {
-		List<Employee> empSalary = employeeRepository.findByEmpSalary(empsalary);
-		if (empSalary.isEmpty()) {
-			return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-		} else {
-			return new ResponseEntity<>(empSalary, HttpStatus.OK);
-		}
+	@GetMapping("/employees/salary/{empSalary}")
+	public ResponseEntity<List<EmployeeResponse>> getEmployeeBySalary(@PathVariable BigDecimal empSalary) {
+		List<EmployeeResponse> employeeSalary = employeeService.getEmployeeBySalary(empSalary);
+		return ResponseEntity.ok(employeeSalary);
 
 	}
 
-	@GetMapping("/employees/name/{empname}")
-	public ResponseEntity<List<Employee>> getEmployeeName(@PathVariable String empname) {
-		List<Employee> empName = employeeRepository.findByEmpName(empname);
-		if (empName.isEmpty()) {
-			return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-		} else {
-			return new ResponseEntity<>(empName, HttpStatus.OK);
-		}
+	@GetMapping("/employees/name/{empName}")
+	public ResponseEntity<List<EmployeeResponse>> getEmployeesByName(@PathVariable String empName) {
+		List<EmployeeResponse> employeeName = employeeService.getEmployeeByName(empName);
+		return ResponseEntity.ok(employeeName);
 
 	}
 
