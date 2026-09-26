@@ -42,7 +42,7 @@ public class EmployeeService {
 	// Get Employee by Id
 	public EmployeeResponse getEmployeeById(Long empId) {
 		Employee employee = employeeRepository.findById(empId)
-				.orElseThrow(() -> new EmployeeNotFoundException(empId));
+				.orElseThrow(() -> new EmployeeNotFoundException("No employee found by Id: " + empId));
 		return mapToResponse(employee);
 
 	}
@@ -50,7 +50,7 @@ public class EmployeeService {
 	// Update Employee Details
 	public EmployeeResponse updateEmployee(Long empId, EmployeeRequest request) {
 		Employee employee = employeeRepository.findById(empId)
-				.orElseThrow(() -> new EmployeeNotFoundException(empId));
+				.orElseThrow(() -> new EmployeeNotFoundException("No employee found by Id: " + empId));
 		employee.setEmpName(request.getEmpName());
 		employee.setEmpAge(request.getEmpAge());
 		employee.setEmpCity(request.getEmpCity());
@@ -64,7 +64,7 @@ public class EmployeeService {
 	// Delete Employee By Id
 	public void deleteById(Long empId) {
 		if (!employeeRepository.existsById(empId)) {
-			throw new EmployeeNotFoundException(empId);
+			throw new EmployeeNotFoundException("No employee found by Id: " + empId);
 		}
 		employeeRepository.deleteById(empId);
 	}

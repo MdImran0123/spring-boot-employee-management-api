@@ -6,6 +6,8 @@ REST API for managing employees. Built with **Spring Boot**, **Spring Data JPA**
 
 **Repository:** [spring-boot-employee-management-api](https://github.com/MdImran0123/spring-boot-employee-management-api)
 
+See [docs/ROADMAP.md](docs/ROADMAP.md) for planned improvements.
+
 ---
 
 ## Features

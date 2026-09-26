@@ -146,6 +146,13 @@ class EmployeeServiceTest {
 	}
 
 	@Test
+	void getEmployeeByCity_returnsEmptyListWhenNoMatch() {
+		when(employeeRepository.findByEmpCityContainingIgnoreCase("Nowhere")).thenReturn(List.of());
+
+		assertThat(employeeService.getEmployeeByCity("Nowhere")).isEmpty();
+	}
+
+	@Test
 	void getEmployeeBySalary_normalizesScaleBeforeQuery() {
 		when(employeeRepository.findByEmpSalaryBetween(any(), any())).thenReturn(List.of(existing));
 

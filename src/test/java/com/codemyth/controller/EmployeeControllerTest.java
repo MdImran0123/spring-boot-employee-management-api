@@ -57,21 +57,29 @@ class EmployeeControllerTest {
 	void createEmployee_returns400_whenNameBlank() throws Exception {
 		mockMvc.perform(post("/api/v1/employees").contentType(MediaType.APPLICATION_JSON).content("""
 				{"empName":"","empAge":30,"empCity":"London","empSalary":90000}
-				""")).andExpect(status().isBadRequest());
+				""")).andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.status").value(400))
+				.andExpect(jsonPath("$.error").value("Bad Request"))
+				.andExpect(jsonPath("$.message").value("Validation failed"))
+				.andExpect(jsonPath("$.errors.empName").value("Employee name cannot be blank"));
 	}
 
 	@Test
 	void createEmployee_returns400_whenAgeInvalid() throws Exception {
 		mockMvc.perform(post("/api/v1/employees").contentType(MediaType.APPLICATION_JSON).content("""
 				{"empName":"Ada","empAge":17,"empCity":"London","empSalary":90000}
-				""")).andExpect(status().isBadRequest());
+				""")).andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.status").value(400))
+				.andExpect(jsonPath("$.errors.empAge").value("Employee age must be at least 18"));
 	}
 
 	@Test
 	void createEmployee_returns400_whenSalaryMissing() throws Exception {
 		mockMvc.perform(post("/api/v1/employees").contentType(MediaType.APPLICATION_JSON).content("""
 				{"empName":"Ada","empAge":30,"empCity":"London"}
-				""")).andExpect(status().isBadRequest());
+				""")).andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.status").value(400))
+				.andExpect(jsonPath("$.errors.empSalary").value("Employee salary cannot be null"));
 	}
 
 	@Test
@@ -93,11 +101,12 @@ class EmployeeControllerTest {
 
 	@Test
 	void getEmployeeById_returns404_whenMissing() throws Exception {
-		when(employeeService.getEmployeeById(99L)).thenThrow(new EmployeeNotFoundException(99L));
+		when(employeeService.getEmployeeById(99L))
+				.thenThrow(new EmployeeNotFoundException("No employee found by Id: 99"));
 
 		mockMvc.perform(get("/api/v1/employees/99")).andExpect(status().isNotFound())
 				.andExpect(jsonPath("$.status").value(404))
-				.andExpect(jsonPath("$.message").value("Employee not found with Id 99"));
+				.andExpect(jsonPath("$.message").value("No employee found by Id: 99"));
 	}
 
 	@Test
@@ -120,7 +129,8 @@ class EmployeeControllerTest {
 
 	@Test
 	void deleteById_returns404_whenMissing() throws Exception {
-		doThrow(new EmployeeNotFoundException(99L)).when(employeeService).deleteById(99L);
+		doThrow(new EmployeeNotFoundException("No employee found by Id: 99")).when(employeeService)
+				.deleteById(99L);
 
 		mockMvc.perform(delete("/api/v1/employees/99")).andExpect(status().isNotFound());
 	}
@@ -139,6 +149,14 @@ class EmployeeControllerTest {
 
 		mockMvc.perform(get("/api/v1/employees/city/London")).andExpect(status().isOk())
 				.andExpect(jsonPath("$[0].empCity").value("London"));
+	}
+
+	@Test
+	void getByCity_returns200_withEmptyList_whenNoMatch() throws Exception {
+		when(employeeService.getEmployeeByCity("Nowhere")).thenReturn(List.of());
+
+		mockMvc.perform(get("/api/v1/employees/city/Nowhere")).andExpect(status().isOk())
+				.andExpect(jsonPath("$").isArray()).andExpect(jsonPath("$").isEmpty());
 	}
 
 	@Test
