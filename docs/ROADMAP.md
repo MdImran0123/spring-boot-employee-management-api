@@ -250,9 +250,9 @@ Use this when starting each phase:
 
 - [x] Phase 1.1 Validation error handler
 - [x] Phase 1.2 Empty search → 200 + `[]`
-- [ ] Phase 1.3 Pagination
-- [ ] Phase 1.4 Unified query-param search (+ deprecate path search)
-- [ ] Phase 2.1 Flyway
+- [x] Phase 1.3 Pagination
+- [x] Phase 1.4 Unified query-param search (+ deprecate path search)
+- [x] Phase 2.1 Flyway
 - [ ] Phase 2.2 Indexes
 - [ ] Phase 2.3 DTO records
 - [ ] Phase 2.4 MapStruct

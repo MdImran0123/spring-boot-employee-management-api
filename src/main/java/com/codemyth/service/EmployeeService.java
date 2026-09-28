@@ -3,13 +3,17 @@ package com.codemyth.service;
 import java.math.BigDecimal;
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.codemyth.dto.EmployeeRequest;
 import com.codemyth.dto.EmployeeResponse;
+import com.codemyth.dto.PageResponse;
 import com.codemyth.exception.EmployeeNotFoundException;
 import com.codemyth.model.Employee;
 import com.codemyth.repository.EmployeeRepository;
+import com.codemyth.repository.EmployeeSpecifications;
 
 @Service
 public class EmployeeService {
@@ -33,10 +37,14 @@ public class EmployeeService {
 		return mapToResponse(savedEmployee);
 	}
 
-	// Get All Employees
-	public List<EmployeeResponse> getAllEmployees() {
-		return employeeRepository.findAll().stream().map(this::mapToResponse).toList();
-
+	// Get employees (paginated + optional filters)
+	public PageResponse<EmployeeResponse> getAllEmployees(String name, String city, Integer age, BigDecimal salary,
+			Pageable pageable) {
+		Page<Employee> page = employeeRepository.findAll(EmployeeSpecifications.withFilters(name, city, age, salary),
+				pageable);
+		List<EmployeeResponse> content = page.getContent().stream().map(this::mapToResponse).toList();
+		return new PageResponse<>(content, page.getNumber(), page.getSize(), page.getTotalElements(),
+				page.getTotalPages());
 	}
 
 	// Get Employee by Id

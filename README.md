@@ -32,6 +32,7 @@ Web            Spring Web MVC
 Persistence    Spring Data JPA / Hibernate
 Validation     Jakarta Bean Validation
 Database       MySQL (mysql-connector-j)
+Migrations     Flyway
 Build          Maven
 Tests          JUnit 5, Mockito, MockMvc, AssertJ
 ```
@@ -73,26 +74,23 @@ com.codemyth.config       CORS configuration
 
 ## Database setup
 
-1. Create the database:
+1. Create the database (Flyway does **not** create the database itself):
 
 ```sql
 CREATE DATABASE employeedb;
 ```
 
-2. Create the `employee` table (schema is not auto-generated — `ddl-auto=none`):
+2. Start the app. Flyway runs migrations from `src/main/resources/db/migration/` on startup (`ddl-auto=none`).
 
-```sql
-USE employeedb;
+- `V1__create_employee.sql` creates the `employee` table.
 
-CREATE TABLE employee (
-  emp_id     BIGINT AUTO_INCREMENT PRIMARY KEY,
-  emp_name   VARCHAR(255) NOT NULL,
-  emp_age    INT NOT NULL,
-  emp_city   VARCHAR(255) NOT NULL,
-  emp_salary DECIMAL(10, 2) NOT NULL
-);
+**Existing database:** if `employee` already exists and Flyway has never run, baseline once before starting the app:
+
+```bash
+./mvnw flyway:baseline -Dflyway.url=jdbc:mysql://localhost:3306/employeedb -Dflyway.user=... -Dflyway.password=...
 ```
 
+Or point a fresh empty `employeedb` at the app and let `V1` create the table.
 ---
 
 ## Configuration
@@ -176,15 +174,15 @@ Response also includes `empId`:
 ```text
 Method     Endpoint                         Description
 POST       /employees                       Create employee
-GET        /employees                       List all employees
+GET        /employees                       List/search employees (query: name, city, age, salary + page, size, sort)
 GET        /employees/{empId}               Get employee by id
 PUT        /employees/{empId}               Update employee by id
 DELETE     /employees/{empId}               Delete employee by id
 DELETE     /employees                       Delete all employees
-GET        /employees/city/{empCity}        Search by city (partial, case-insensitive)
-GET        /employees/age/{empAge}          Search by exact age
-GET        /employees/salary/{empSalary}    Search by exact salary
-GET        /employees/name/{empName}        Search by name (partial, case-insensitive)
+GET        /employees/city/{empCity}        Deprecated — use ?city=
+GET        /employees/age/{empAge}          Deprecated — use ?age=
+GET        /employees/salary/{empSalary}    Deprecated — use ?salary=
+GET        /employees/name/{empName}        Deprecated — use ?name=
 ```
 
 ### Examples
@@ -240,10 +238,10 @@ DELETE /api/v1/employees/1
 **Search by city**
 
 ```http
-GET /api/v1/employees/city/Delhi
+GET /api/v1/employees?city=Delhi
 ```
 
-→ `200 OK` with a list (may be empty)
+→ `200 OK` with a paginated list (may be empty)
 
 ---
 
@@ -315,6 +313,7 @@ EmployeeAPICRUD/
 │   ├── repository/EmployeeRepository.java
 │   └── service/EmployeeService.java
 ├── src/main/resources/application.properties
+├── src/main/resources/db/migration/V1__create_employee.sql
 ├── src/test/java/com/codemyth/
 │   ├── controller/EmployeeControllerTest.java
 │   ├── dto/EmployeeRequestValidationTest.java

@@ -20,9 +20,14 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 
 import com.codemyth.dto.EmployeeRequest;
 import com.codemyth.dto.EmployeeResponse;
+import com.codemyth.dto.PageResponse;
 import com.codemyth.exception.EmployeeNotFoundException;
 import com.codemyth.model.Employee;
 import com.codemyth.repository.EmployeeRepository;
@@ -65,12 +70,31 @@ class EmployeeServiceTest {
 
 	@Test
 	void getAllEmployees_mapsEntitiesToResponses() {
-		when(employeeRepository.findAll()).thenReturn(List.of(existing));
+		Pageable pageable = PageRequest.of(0, 20);
+		when(employeeRepository.findAll(any(Specification.class), eq(pageable)))
+				.thenReturn(new PageImpl<>(List.of(existing), pageable, 1));
 
-		List<EmployeeResponse> result = employeeService.getAllEmployees();
+		PageResponse<EmployeeResponse> result = employeeService.getAllEmployees(null, null, null, null, pageable);
 
-		assertThat(result).hasSize(1);
-		assertThat(result.get(0).getEmpName()).isEqualTo("Ada Lovelace");
+		assertThat(result.getContent()).hasSize(1);
+		assertThat(result.getContent().get(0).getEmpName()).isEqualTo("Ada Lovelace");
+		assertThat(result.getPage()).isEqualTo(0);
+		assertThat(result.getSize()).isEqualTo(20);
+		assertThat(result.getTotalElements()).isEqualTo(1);
+		assertThat(result.getTotalPages()).isEqualTo(1);
+	}
+
+	@Test
+	void getAllEmployees_appliesFiltersViaSpecification() {
+		Pageable pageable = PageRequest.of(0, 20);
+		when(employeeRepository.findAll(any(Specification.class), eq(pageable)))
+				.thenReturn(new PageImpl<>(List.of(existing), pageable, 1));
+
+		PageResponse<EmployeeResponse> result = employeeService.getAllEmployees("Ada", "London", 30,
+				new BigDecimal("90000"), pageable);
+
+		assertThat(result.getContent()).hasSize(1);
+		verify(employeeRepository).findAll(any(Specification.class), eq(pageable));
 	}
 
 	@Test
