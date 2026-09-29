@@ -83,6 +83,7 @@ CREATE DATABASE employeedb;
 2. Start the app. Flyway runs migrations from `src/main/resources/db/migration/` on startup (`ddl-auto=none`).
 
 - `V1__create_employee.sql` creates the `employee` table.
+- `V2__indexes.sql` adds indexes on `emp_city` and `emp_name` for search.
 
 **Existing database:** if `employee` already exists and Flyway has never run, baseline once before starting the app:
 
@@ -314,6 +315,7 @@ EmployeeAPICRUD/
 │   └── service/EmployeeService.java
 ├── src/main/resources/application.properties
 ├── src/main/resources/db/migration/V1__create_employee.sql
+├── src/main/resources/db/migration/V2__indexes.sql
 ├── src/test/java/com/codemyth/
 │   ├── controller/EmployeeControllerTest.java
 │   ├── dto/EmployeeRequestValidationTest.java
