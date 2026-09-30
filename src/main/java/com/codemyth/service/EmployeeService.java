@@ -27,10 +27,10 @@ public class EmployeeService {
 	public EmployeeResponse createEmployee(EmployeeRequest request) {
 		Employee employee = new Employee();
 
-		employee.setEmpName(request.getEmpName());
-		employee.setEmpAge(request.getEmpAge());
-		employee.setEmpCity(request.getEmpCity());
-		employee.setEmpSalary(request.getEmpSalary());
+		employee.setEmpName(request.empName());
+		employee.setEmpAge(request.empAge());
+		employee.setEmpCity(request.empCity());
+		employee.setEmpSalary(request.empSalary());
 
 		Employee savedEmployee = employeeRepository.save(employee);
 
@@ -59,10 +59,10 @@ public class EmployeeService {
 	public EmployeeResponse updateEmployee(Long empId, EmployeeRequest request) {
 		Employee employee = employeeRepository.findById(empId)
 				.orElseThrow(() -> new EmployeeNotFoundException("No employee found by Id: " + empId));
-		employee.setEmpName(request.getEmpName());
-		employee.setEmpAge(request.getEmpAge());
-		employee.setEmpCity(request.getEmpCity());
-		employee.setEmpSalary(request.getEmpSalary());
+		employee.setEmpName(request.empName());
+		employee.setEmpAge(request.empAge());
+		employee.setEmpCity(request.empCity());
+		employee.setEmpSalary(request.empSalary());
 		Employee employeeDetail = employeeRepository.save(employee);
 
 		return mapToResponse(employeeDetail);

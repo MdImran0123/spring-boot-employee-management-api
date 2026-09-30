@@ -64,8 +64,8 @@ class EmployeeServiceTest {
 		verify(employeeRepository).save(captor.capture());
 		assertThat(captor.getValue().getEmpName()).isEqualTo("Ada Lovelace");
 		assertThat(captor.getValue().getEmpCity()).isEqualTo("London");
-		assertThat(response.getEmpId()).isEqualTo(1L);
-		assertThat(response.getEmpSalary()).isEqualByComparingTo("90000.00");
+		assertThat(response.empId()).isEqualTo(1L);
+		assertThat(response.empSalary()).isEqualByComparingTo("90000.00");
 	}
 
 	@Test
@@ -77,7 +77,7 @@ class EmployeeServiceTest {
 		PageResponse<EmployeeResponse> result = employeeService.getAllEmployees(null, null, null, null, pageable);
 
 		assertThat(result.getContent()).hasSize(1);
-		assertThat(result.getContent().get(0).getEmpName()).isEqualTo("Ada Lovelace");
+		assertThat(result.getContent().get(0).empName()).isEqualTo("Ada Lovelace");
 		assertThat(result.getPage()).isEqualTo(0);
 		assertThat(result.getSize()).isEqualTo(20);
 		assertThat(result.getTotalElements()).isEqualTo(1);
@@ -103,8 +103,8 @@ class EmployeeServiceTest {
 
 		EmployeeResponse response = employeeService.getEmployeeById(1L);
 
-		assertThat(response.getEmpId()).isEqualTo(1L);
-		assertThat(response.getEmpCity()).isEqualTo("London");
+		assertThat(response.empId()).isEqualTo(1L);
+		assertThat(response.empCity()).isEqualTo("London");
 	}
 
 	@Test
@@ -123,10 +123,10 @@ class EmployeeServiceTest {
 
 		EmployeeResponse response = employeeService.updateEmployee(1L, update);
 
-		assertThat(response.getEmpName()).isEqualTo("Grace Hopper");
-		assertThat(response.getEmpCity()).isEqualTo("New York");
-		assertThat(response.getEmpAge()).isEqualTo(40);
-		assertThat(response.getEmpSalary()).isEqualByComparingTo("120000.00");
+		assertThat(response.empName()).isEqualTo("Grace Hopper");
+		assertThat(response.empCity()).isEqualTo("New York");
+		assertThat(response.empAge()).isEqualTo(40);
+		assertThat(response.empSalary()).isEqualByComparingTo("120000.00");
 	}
 
 	@Test
@@ -165,7 +165,7 @@ class EmployeeServiceTest {
 	void getEmployeeByCity_usesIgnoreCaseContaining() {
 		when(employeeRepository.findByEmpCityContainingIgnoreCase("lon")).thenReturn(List.of(existing));
 
-		assertThat(employeeService.getEmployeeByCity("lon")).extracting(EmployeeResponse::getEmpName)
+		assertThat(employeeService.getEmployeeByCity("lon")).extracting(EmployeeResponse::empName)
 				.containsExactly("Ada Lovelace");
 	}
 

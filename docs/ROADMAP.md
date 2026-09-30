@@ -254,7 +254,7 @@ Use this when starting each phase:
 - [x] Phase 1.4 Unified query-param search (+ deprecate path search)
 - [x] Phase 2.1 Flyway
 - [x] Phase 2.2 Indexes
-- [ ] Phase 2.3 DTO records
+- [x] Phase 2.3 DTO records
 - [ ] Phase 2.4 MapStruct
 - [ ] Phase 2.5 Soft delete
 - [ ] Phase 2.6 PATCH
