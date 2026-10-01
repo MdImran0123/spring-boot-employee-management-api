@@ -30,6 +30,7 @@ Language       Java 21
 Framework      Spring Boot 4.1.1
 Web            Spring Web MVC
 Persistence    Spring Data JPA / Hibernate
+Mapping        MapStruct
 Validation     Jakarta Bean Validation
 Database       MySQL (mysql-connector-j)
 Migrations     Flyway
@@ -54,7 +55,8 @@ Client
 ```text
 Package                   Role
 com.codemyth.controller   REST endpoints
-com.codemyth.service      CRUD / lookup logic; entity ↔ DTO mapping
+com.codemyth.service      CRUD / lookup logic
+com.codemyth.mapper       Entity to DTO mapping (MapStruct)
 com.codemyth.repository   Spring Data JPA queries
 com.codemyth.model        Employee entity
 com.codemyth.dto          EmployeeRequest, EmployeeResponse

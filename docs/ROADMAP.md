@@ -255,7 +255,7 @@ Use this when starting each phase:
 - [x] Phase 2.1 Flyway
 - [x] Phase 2.2 Indexes
 - [x] Phase 2.3 DTO records
-- [ ] Phase 2.4 MapStruct
+- [x] Phase 2.4 MapStruct
 - [ ] Phase 2.5 Soft delete
 - [ ] Phase 2.6 PATCH
 - [ ] Phase 3.1 Logging

@@ -11,6 +11,7 @@ import com.codemyth.dto.EmployeeRequest;
 import com.codemyth.dto.EmployeeResponse;
 import com.codemyth.dto.PageResponse;
 import com.codemyth.exception.EmployeeNotFoundException;
+import com.codemyth.mapper.EmployeeMapper;
 import com.codemyth.model.Employee;
 import com.codemyth.repository.EmployeeRepository;
 import com.codemyth.repository.EmployeeSpecifications;
@@ -18,23 +19,18 @@ import com.codemyth.repository.EmployeeSpecifications;
 @Service
 public class EmployeeService {
 	private final EmployeeRepository employeeRepository;
+	private final EmployeeMapper employeeMapper;
 
-	public EmployeeService(EmployeeRepository employeeRepository) {
+	public EmployeeService(EmployeeRepository employeeRepository, EmployeeMapper employeeMapper) {
 		this.employeeRepository = employeeRepository;
+		this.employeeMapper = employeeMapper;
 	}
 
 	// Create Employee
 	public EmployeeResponse createEmployee(EmployeeRequest request) {
-		Employee employee = new Employee();
-
-		employee.setEmpName(request.empName());
-		employee.setEmpAge(request.empAge());
-		employee.setEmpCity(request.empCity());
-		employee.setEmpSalary(request.empSalary());
-
+		Employee employee = employeeMapper.toEntity(request);
 		Employee savedEmployee = employeeRepository.save(employee);
-
-		return mapToResponse(savedEmployee);
+		return employeeMapper.toResponse(savedEmployee);
 	}
 
 	// Get employees (paginated + optional filters)
@@ -42,7 +38,7 @@ public class EmployeeService {
 			Pageable pageable) {
 		Page<Employee> page = employeeRepository.findAll(EmployeeSpecifications.withFilters(name, city, age, salary),
 				pageable);
-		List<EmployeeResponse> content = page.getContent().stream().map(this::mapToResponse).toList();
+		List<EmployeeResponse> content = page.getContent().stream().map(employeeMapper::toResponse).toList();
 		return new PageResponse<>(content, page.getNumber(), page.getSize(), page.getTotalElements(),
 				page.getTotalPages());
 	}
@@ -51,7 +47,7 @@ public class EmployeeService {
 	public EmployeeResponse getEmployeeById(Long empId) {
 		Employee employee = employeeRepository.findById(empId)
 				.orElseThrow(() -> new EmployeeNotFoundException("No employee found by Id: " + empId));
-		return mapToResponse(employee);
+		return employeeMapper.toResponse(employee);
 
 	}
 
@@ -59,13 +55,9 @@ public class EmployeeService {
 	public EmployeeResponse updateEmployee(Long empId, EmployeeRequest request) {
 		Employee employee = employeeRepository.findById(empId)
 				.orElseThrow(() -> new EmployeeNotFoundException("No employee found by Id: " + empId));
-		employee.setEmpName(request.empName());
-		employee.setEmpAge(request.empAge());
-		employee.setEmpCity(request.empCity());
-		employee.setEmpSalary(request.empSalary());
+		employeeMapper.updateEntity(request, employee);
 		Employee employeeDetail = employeeRepository.save(employee);
-
-		return mapToResponse(employeeDetail);
+		return employeeMapper.toResponse(employeeDetail);
 
 	}
 
@@ -84,30 +76,25 @@ public class EmployeeService {
 
 	// Get Employee Details By City
 	public List<EmployeeResponse> getEmployeeByCity(String city) {
-		return employeeRepository.findByEmpCityContainingIgnoreCase(city).stream().map(this::mapToResponse).toList();
+		return employeeRepository.findByEmpCityContainingIgnoreCase(city).stream().map(employeeMapper::toResponse)
+				.toList();
 	}
 
 	// Get Employee Details By Age
 	public List<EmployeeResponse> getEmployeeByAge(int empAge) {
-		return employeeRepository.findByEmpAge(empAge).stream().map(this::mapToResponse).toList();
+		return employeeRepository.findByEmpAge(empAge).stream().map(employeeMapper::toResponse).toList();
 	}
 
 	// Get Employee Details By Salary
 	public List<EmployeeResponse> getEmployeeBySalary(BigDecimal empSalary) {
 		BigDecimal min = empSalary.setScale(2, java.math.RoundingMode.HALF_UP);
 		BigDecimal max = min;
-		return employeeRepository.findByEmpSalaryBetween(min, max).stream().map(this::mapToResponse).toList();
+		return employeeRepository.findByEmpSalaryBetween(min, max).stream().map(employeeMapper::toResponse).toList();
 	}
 
 	// Get Employee Details By Name
 	public List<EmployeeResponse> getEmployeeByName(String empName) {
-		return employeeRepository.findByEmpNameContainingIgnoreCase(empName).stream().map(this::mapToResponse).toList();
-	}
-
-	// Entity -> Response DTO
-	private EmployeeResponse mapToResponse(Employee employee) {
-
-		return new EmployeeResponse(employee.getEmpId(), employee.getEmpName(), employee.getEmpAge(),
-				employee.getEmpCity(), employee.getEmpSalary());
+		return employeeRepository.findByEmpNameContainingIgnoreCase(empName).stream().map(employeeMapper::toResponse)
+				.toList();
 	}
 }

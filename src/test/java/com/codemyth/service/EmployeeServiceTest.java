@@ -16,8 +16,8 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mapstruct.factory.Mappers;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
@@ -29,6 +29,7 @@ import com.codemyth.dto.EmployeeRequest;
 import com.codemyth.dto.EmployeeResponse;
 import com.codemyth.dto.PageResponse;
 import com.codemyth.exception.EmployeeNotFoundException;
+import com.codemyth.mapper.EmployeeMapper;
 import com.codemyth.model.Employee;
 import com.codemyth.repository.EmployeeRepository;
 
@@ -38,7 +39,8 @@ class EmployeeServiceTest {
 	@Mock
 	private EmployeeRepository employeeRepository;
 
-	@InjectMocks
+	private final EmployeeMapper employeeMapper = Mappers.getMapper(EmployeeMapper.class);
+
 	private EmployeeService employeeService;
 
 	private Employee existing;
@@ -46,6 +48,7 @@ class EmployeeServiceTest {
 
 	@BeforeEach
 	void setUp() {
+		employeeService = new EmployeeService(employeeRepository, employeeMapper);
 		existing = new Employee(1L, "Ada Lovelace", new BigDecimal("90000.00"), 30, "London");
 		request = new EmployeeRequest("Ada Lovelace", 30, "London", new BigDecimal("90000.00"));
 	}
