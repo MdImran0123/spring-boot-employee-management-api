@@ -86,6 +86,7 @@ CREATE DATABASE employeedb;
 
 - `V1__create_employee.sql` creates the `employee` table.
 - `V2__indexes.sql` adds indexes on `emp_city` and `emp_name` for search.
+- `V3__soft_delete.sql` adds a `deleted` flag so deletes are soft deletes.
 
 **Existing database:** if `employee` already exists and Flyway has never run, baseline once before starting the app:
 
@@ -180,8 +181,9 @@ POST       /employees                       Create employee
 GET        /employees                       List/search employees (query: name, city, age, salary + page, size, sort)
 GET        /employees/{empId}               Get employee by id
 PUT        /employees/{empId}               Update employee by id
-DELETE     /employees/{empId}               Delete employee by id
-DELETE     /employees                       Delete all employees
+PATCH      /employees/{empId}               Partial update (only sent fields)
+DELETE     /employees/{empId}               Soft delete employee by id
+DELETE     /employees                       Soft delete all employees
 GET        /employees/city/{empCity}        Deprecated — use ?city=
 GET        /employees/age/{empAge}          Deprecated — use ?age=
 GET        /employees/salary/{empSalary}    Deprecated — use ?salary=
@@ -318,6 +320,7 @@ EmployeeAPICRUD/
 ├── src/main/resources/application.properties
 ├── src/main/resources/db/migration/V1__create_employee.sql
 ├── src/main/resources/db/migration/V2__indexes.sql
+├── src/main/resources/db/migration/V3__soft_delete.sql
 ├── src/test/java/com/codemyth/
 │   ├── controller/EmployeeControllerTest.java
 │   ├── dto/EmployeeRequestValidationTest.java

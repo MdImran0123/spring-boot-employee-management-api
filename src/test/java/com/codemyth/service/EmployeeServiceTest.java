@@ -25,6 +25,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 
+import com.codemyth.dto.EmployeePatchRequest;
 import com.codemyth.dto.EmployeeRequest;
 import com.codemyth.dto.EmployeeResponse;
 import com.codemyth.dto.PageResponse;
@@ -142,26 +143,49 @@ class EmployeeServiceTest {
 	}
 
 	@Test
-	void deleteById_deletesWhenExists() {
-		when(employeeRepository.existsById(1L)).thenReturn(true);
+	void deleteById_marksDeletedWhenExists() {
+		when(employeeRepository.findById(1L)).thenReturn(Optional.of(existing));
+		when(employeeRepository.save(any(Employee.class))).thenAnswer(inv -> inv.getArgument(0));
 
 		employeeService.deleteById(1L);
 
-		verify(employeeRepository).deleteById(1L);
-	}
-
-	@Test
-	void deleteById_throwsWhenMissing() {
-		when(employeeRepository.existsById(99L)).thenReturn(false);
-
-		assertThatThrownBy(() -> employeeService.deleteById(99L)).isInstanceOf(EmployeeNotFoundException.class);
+		assertThat(existing.isDeleted()).isTrue();
+		verify(employeeRepository).save(existing);
 		verify(employeeRepository, never()).deleteById(any());
 	}
 
 	@Test
-	void deleteAllEmployees_delegatesToRepository() {
+	void deleteById_throwsWhenMissing() {
+		when(employeeRepository.findById(99L)).thenReturn(Optional.empty());
+
+		assertThatThrownBy(() -> employeeService.deleteById(99L)).isInstanceOf(EmployeeNotFoundException.class);
+		verify(employeeRepository, never()).save(any());
+		verify(employeeRepository, never()).deleteById(any());
+	}
+
+	@Test
+	void deleteAllEmployees_marksVisibleRowsDeleted() {
+		when(employeeRepository.findAll()).thenReturn(List.of(existing));
+
 		employeeService.deleteAllEmployees();
-		verify(employeeRepository).deleteAll();
+
+		assertThat(existing.isDeleted()).isTrue();
+		verify(employeeRepository).saveAll(List.of(existing));
+		verify(employeeRepository, never()).deleteAll();
+	}
+
+	@Test
+	void patchEmployee_updatesOnlyProvidedFields() {
+		when(employeeRepository.findById(1L)).thenReturn(Optional.of(existing));
+		when(employeeRepository.save(any(Employee.class))).thenAnswer(inv -> inv.getArgument(0));
+
+		EmployeeResponse response = employeeService.patchEmployee(1L,
+				new EmployeePatchRequest(null, null, "Paris", null));
+
+		assertThat(response.empCity()).isEqualTo("Paris");
+		assertThat(response.empName()).isEqualTo("Ada Lovelace");
+		assertThat(response.empAge()).isEqualTo(30);
+		assertThat(response.empSalary()).isEqualByComparingTo("90000.00");
 	}
 
 	@Test

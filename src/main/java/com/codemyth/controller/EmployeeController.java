@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.codemyth.dto.EmployeePatchRequest;
 import com.codemyth.dto.EmployeeRequest;
 import com.codemyth.dto.EmployeeResponse;
 import com.codemyth.dto.PageResponse;
@@ -62,6 +64,12 @@ public class EmployeeController {
 	public ResponseEntity<EmployeeResponse> updateEmployeeById(@PathVariable Long empId, @Valid @RequestBody EmployeeRequest request) {
 		EmployeeResponse empDetails = employeeService.updateEmployee(empId, request);
 		return ResponseEntity.ok(empDetails);
+	}
+
+	@PatchMapping("/employees/{empId}")
+	public ResponseEntity<EmployeeResponse> patchEmployeeById(@PathVariable Long empId,
+			@Valid @RequestBody EmployeePatchRequest request) {
+		return ResponseEntity.ok(employeeService.patchEmployee(empId, request));
 	}
 
 	@DeleteMapping("/employees/{empId}")

@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import com.codemyth.dto.EmployeePatchRequest;
 import com.codemyth.dto.EmployeeRequest;
 import com.codemyth.dto.EmployeeResponse;
 import com.codemyth.dto.PageResponse;
@@ -61,17 +62,27 @@ public class EmployeeService {
 
 	}
 
-	// Delete Employee By Id
-	public void deleteById(Long empId) {
-		if (!employeeRepository.existsById(empId)) {
-			throw new EmployeeNotFoundException("No employee found by Id: " + empId);
-		}
-		employeeRepository.deleteById(empId);
+	// Partial update
+	public EmployeeResponse patchEmployee(Long empId, EmployeePatchRequest request) {
+		Employee employee = employeeRepository.findById(empId)
+				.orElseThrow(() -> new EmployeeNotFoundException("No employee found by Id: " + empId));
+		employeeMapper.patchEntity(request, employee);
+		return employeeMapper.toResponse(employeeRepository.save(employee));
 	}
 
-	// Delete All Employee Details
+	// Soft delete by id
+	public void deleteById(Long empId) {
+		Employee employee = employeeRepository.findById(empId)
+				.orElseThrow(() -> new EmployeeNotFoundException("No employee found by Id: " + empId));
+		employee.setDeleted(true);
+		employeeRepository.save(employee);
+	}
+
+	// Soft delete all visible employees
 	public void deleteAllEmployees() {
-		employeeRepository.deleteAll();
+		List<Employee> employees = employeeRepository.findAll();
+		employees.forEach(employee -> employee.setDeleted(true));
+		employeeRepository.saveAll(employees);
 	}
 
 	// Get Employee Details By City

@@ -2,6 +2,8 @@ package com.codemyth.model;
 
 import java.math.BigDecimal;
 
+import org.hibernate.annotations.SQLRestriction;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -11,6 +13,7 @@ import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "employee")
+@SQLRestriction("deleted = false")
 public class Employee {
 
 	@Id
@@ -28,6 +31,9 @@ public class Employee {
 
 	@Column(name = "emp_city", nullable = false)
 	private String empCity;
+
+	@Column(nullable = false)
+	private boolean deleted = false;
 
 	public Employee() {
 	}
@@ -78,6 +84,14 @@ public class Employee {
 
 	public void setEmpCity(String empCity) {
 		this.empCity = empCity;
+	}
+
+	public boolean isDeleted() {
+		return deleted;
+	}
+
+	public void setDeleted(boolean deleted) {
+		this.deleted = deleted;
 	}
 
 	@Override

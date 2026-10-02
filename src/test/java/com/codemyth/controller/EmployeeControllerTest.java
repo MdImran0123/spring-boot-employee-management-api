@@ -8,6 +8,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -200,6 +201,16 @@ class EmployeeControllerTest {
 		mockMvc.perform(put("/api/v1/employees/1").contentType(MediaType.APPLICATION_JSON).content("""
 				{"empName":"","empAge":40,"empCity":"NY","empSalary":120000}
 				""")).andExpect(status().isBadRequest());
+	}
+
+	@Test
+	void patchEmployee_returns200() throws Exception {
+		when(employeeService.patchEmployee(eq(1L), any()))
+				.thenReturn(new EmployeeResponse(1L, "Ada", 30, "Paris", new BigDecimal("90000")));
+
+		mockMvc.perform(patch("/api/v1/employees/1").contentType(MediaType.APPLICATION_JSON).content("""
+				{"empCity":"Paris"}
+				""")).andExpect(status().isOk()).andExpect(jsonPath("$.empCity").value("Paris"));
 	}
 
 	@Test
