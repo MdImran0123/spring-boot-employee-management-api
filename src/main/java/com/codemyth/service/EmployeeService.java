@@ -3,6 +3,8 @@ package com.codemyth.service;
 import java.math.BigDecimal;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -19,6 +21,8 @@ import com.codemyth.repository.EmployeeSpecifications;
 
 @Service
 public class EmployeeService {
+	private static final Logger LOGGER = LoggerFactory.getLogger(EmployeeService.class);
+
 	private final EmployeeRepository employeeRepository;
 	private final EmployeeMapper employeeMapper;
 
@@ -31,6 +35,7 @@ public class EmployeeService {
 	public EmployeeResponse createEmployee(EmployeeRequest request) {
 		Employee employee = employeeMapper.toEntity(request);
 		Employee savedEmployee = employeeRepository.save(employee);
+		LOGGER.info("Created employee with id={}", savedEmployee.getEmpId());
 		return employeeMapper.toResponse(savedEmployee);
 	}
 
@@ -58,6 +63,7 @@ public class EmployeeService {
 				.orElseThrow(() -> new EmployeeNotFoundException("No employee found by Id: " + empId));
 		employeeMapper.updateEntity(request, employee);
 		Employee employeeDetail = employeeRepository.save(employee);
+		LOGGER.info("Updated employee with id={}", empId);
 		return employeeMapper.toResponse(employeeDetail);
 
 	}
@@ -67,7 +73,9 @@ public class EmployeeService {
 		Employee employee = employeeRepository.findById(empId)
 				.orElseThrow(() -> new EmployeeNotFoundException("No employee found by Id: " + empId));
 		employeeMapper.patchEntity(request, employee);
-		return employeeMapper.toResponse(employeeRepository.save(employee));
+		Employee saved = employeeRepository.save(employee);
+		LOGGER.info("Patched employee with id={}", empId);
+		return employeeMapper.toResponse(saved);
 	}
 
 	// Soft delete by id
@@ -76,6 +84,7 @@ public class EmployeeService {
 				.orElseThrow(() -> new EmployeeNotFoundException("No employee found by Id: " + empId));
 		employee.setDeleted(true);
 		employeeRepository.save(employee);
+		LOGGER.info("Soft-deleted employee with id={}", empId);
 	}
 
 	// Soft delete all visible employees
@@ -83,6 +92,7 @@ public class EmployeeService {
 		List<Employee> employees = employeeRepository.findAll();
 		employees.forEach(employee -> employee.setDeleted(true));
 		employeeRepository.saveAll(employees);
+		LOGGER.info("Soft-deleted all employees, count={}", employees.size());
 	}
 
 	// Get Employee Details By City

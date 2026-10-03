@@ -258,8 +258,8 @@ Use this when starting each phase:
 - [x] Phase 2.4 MapStruct
 - [x] Phase 2.5 Soft delete
 - [x] Phase 2.6 PATCH
-- [ ] Phase 3.1 Logging
-- [ ] Phase 3.2 springdoc-openapi
+- [x] Phase 3.1 Logging
+- [x] Phase 3.2 springdoc-openapi
 - [ ] Phase 3.3 Actuator
 - [ ] Phase 3.4 Profiles
 - [ ] Phase 4.1 JWT security

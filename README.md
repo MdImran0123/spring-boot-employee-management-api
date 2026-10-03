@@ -4,6 +4,9 @@ REST API for managing employees. Built with **Spring Boot**, **Spring Data JPA**
 
 **Base URL:** `http://localhost:8080/api/v1`
 
+**Swagger UI:** [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)  
+**OpenAPI JSON:** [http://localhost:8080/v3/api-docs](http://localhost:8080/v3/api-docs)
+
 **Repository:** [spring-boot-employee-management-api](https://github.com/MdImran0123/spring-boot-employee-management-api)
 
 See [docs/ROADMAP.md](docs/ROADMAP.md) for planned improvements.
@@ -18,6 +21,7 @@ See [docs/ROADMAP.md](docs/ROADMAP.md) for planned improvements.
 - DTO layer (`EmployeeRequest` / `EmployeeResponse`) — JPA entity is not exposed
 - Global `404` handling for missing employees
 - CORS enabled for local frontends on ports `5173` and `3000`
+- OpenAPI / Swagger UI via springdoc
 - Unit and Web MVC tests
 
 ---
@@ -34,6 +38,7 @@ Mapping        MapStruct
 Validation     Jakarta Bean Validation
 Database       MySQL (mysql-connector-j)
 Migrations     Flyway
+API docs       springdoc-openapi (Swagger UI)
 Build          Maven
 Tests          JUnit 5, Mockito, MockMvc, AssertJ
 ```

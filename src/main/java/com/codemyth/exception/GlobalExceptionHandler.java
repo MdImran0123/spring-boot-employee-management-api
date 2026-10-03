@@ -4,6 +4,8 @@ import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -13,8 +15,11 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+	private static final Logger LOGGER = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
 	@ExceptionHandler(EmployeeNotFoundException.class)
 	public ResponseEntity<Map<String, Object>> handleNotFound(EmployeeNotFoundException ex) {
+		LOGGER.warn("Employee not found: {}", ex.getMessage());
 		Map<String, Object> body = new LinkedHashMap<>();
 		body.put("timestamp", Instant.now().toString());
 		body.put("status", 404);
@@ -29,6 +34,7 @@ public class GlobalExceptionHandler {
 		ex.getBindingResult().getFieldErrors()
 				.forEach(error -> fieldErrors.put(error.getField(), error.getDefaultMessage()));
 
+		LOGGER.warn("Validation failed for fields={}", fieldErrors.keySet());
 		Map<String, Object> body = new LinkedHashMap<>();
 		body.put("timestamp", Instant.now().toString());
 		body.put("status", 400);
@@ -40,6 +46,7 @@ public class GlobalExceptionHandler {
 
 	@ExceptionHandler(Exception.class)
 	public ResponseEntity<Map<String, Object>> handleGeneric(Exception ex) {
+		LOGGER.error("Unexpected error", ex);
 		Map<String, Object> body = new LinkedHashMap<>();
 		body.put("timestamp", Instant.now().toString());
 		body.put("status", 500);

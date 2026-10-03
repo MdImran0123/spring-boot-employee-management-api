@@ -24,10 +24,13 @@ import com.codemyth.dto.EmployeeResponse;
 import com.codemyth.dto.PageResponse;
 import com.codemyth.service.EmployeeService;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/v1")
+@Tag(name = "Employees", description = "Employee CRUD, search, and soft delete")
 public class EmployeeController {
 
 	private final EmployeeService employeeService;
@@ -36,12 +39,14 @@ public class EmployeeController {
 		this.employeeService = employeeService;
 	}
 
+	@Operation(summary = "Create employee")
 	@PostMapping("/employees")
 	public ResponseEntity<EmployeeResponse> createEmployee(@Valid @RequestBody EmployeeRequest request) {
 		EmployeeResponse employeeDetails = employeeService.createEmployee(request);
 		return ResponseEntity.status(HttpStatus.CREATED).body(employeeDetails);
 	}
 
+	@Operation(summary = "List or search employees (paginated)")
 	@GetMapping("/employees")
 	public ResponseEntity<PageResponse<EmployeeResponse>> getAllEmployees(
 			@RequestParam(required = false) String name,
@@ -53,6 +58,7 @@ public class EmployeeController {
 		return ResponseEntity.ok(empPage);
 	}
 
+	@Operation(summary = "Get employee by id")
 	@GetMapping("/employees/{empId}")
 	public ResponseEntity<EmployeeResponse> getEmployeeById(@PathVariable Long empId) {
 		EmployeeResponse emp = employeeService.getEmployeeById(empId);
@@ -60,18 +66,21 @@ public class EmployeeController {
 
 	}
 
+	@Operation(summary = "Replace employee by id")
 	@PutMapping("/employees/{empId}")
 	public ResponseEntity<EmployeeResponse> updateEmployeeById(@PathVariable Long empId, @Valid @RequestBody EmployeeRequest request) {
 		EmployeeResponse empDetails = employeeService.updateEmployee(empId, request);
 		return ResponseEntity.ok(empDetails);
 	}
 
+	@Operation(summary = "Partial update employee by id")
 	@PatchMapping("/employees/{empId}")
 	public ResponseEntity<EmployeeResponse> patchEmployeeById(@PathVariable Long empId,
 			@Valid @RequestBody EmployeePatchRequest request) {
 		return ResponseEntity.ok(employeeService.patchEmployee(empId, request));
 	}
 
+	@Operation(summary = "Soft delete employee by id")
 	@DeleteMapping("/employees/{empId}")
 	public ResponseEntity<Void> deleteById(@PathVariable Long empId) {
 		employeeService.deleteById(empId);
@@ -79,6 +88,7 @@ public class EmployeeController {
 
 	}
 
+	@Operation(summary = "Soft delete all employees")
 	@DeleteMapping("/employees")
 	public ResponseEntity<Void> deleteAllEmployees() {
 		employeeService.deleteAllEmployees();
