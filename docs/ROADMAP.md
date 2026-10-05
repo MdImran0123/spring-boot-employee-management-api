@@ -260,7 +260,7 @@ Use this when starting each phase:
 - [x] Phase 2.6 PATCH
 - [x] Phase 3.1 Logging
 - [x] Phase 3.2 springdoc-openapi
-- [ ] Phase 3.3 Actuator
+- [x] Phase 3.3 Actuator
 - [ ] Phase 3.4 Profiles
 - [ ] Phase 4.1 JWT security
 - [ ] Phase 4.2 Docker / Compose

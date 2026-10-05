@@ -5,7 +5,9 @@ REST API for managing employees. Built with **Spring Boot**, **Spring Data JPA**
 **Base URL:** `http://localhost:8080/api/v1`
 
 **Swagger UI:** [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)  
-**OpenAPI JSON:** [http://localhost:8080/v3/api-docs](http://localhost:8080/v3/api-docs)
+**OpenAPI JSON:** [http://localhost:8080/v3/api-docs](http://localhost:8080/v3/api-docs)  
+**Health:** [http://localhost:8080/actuator/health](http://localhost:8080/actuator/health)  
+**Info:** [http://localhost:8080/actuator/info](http://localhost:8080/actuator/info)
 
 **Repository:** [spring-boot-employee-management-api](https://github.com/MdImran0123/spring-boot-employee-management-api)
 
@@ -22,6 +24,7 @@ See [docs/ROADMAP.md](docs/ROADMAP.md) for planned improvements.
 - Global `404` handling for missing employees
 - CORS enabled for local frontends on ports `5173` and `3000`
 - OpenAPI / Swagger UI via springdoc
+- Actuator health and info endpoints
 - Unit and Web MVC tests
 
 ---
@@ -39,6 +42,7 @@ Validation     Jakarta Bean Validation
 Database       MySQL (mysql-connector-j)
 Migrations     Flyway
 API docs       springdoc-openapi (Swagger UI)
+Ops            Spring Boot Actuator (health, info)
 Build          Maven
 Tests          JUnit 5, Mockito, MockMvc, AssertJ
 ```
@@ -148,6 +152,11 @@ mvn spring-boot:run
 ```
 
 App starts on **`http://localhost:8080`**.
+
+Actuator exposes only `health` and `info`. Health details stay hidden:
+
+- `GET /actuator/health`
+- `GET /actuator/info`
 
 ---
 

@@ -24,6 +24,9 @@ import com.codemyth.dto.EmployeeResponse;
 import com.codemyth.dto.PageResponse;
 import com.codemyth.service.EmployeeService;
 
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -48,12 +51,13 @@ public class EmployeeController {
 
 	@Operation(summary = "List or search employees (paginated)")
 	@GetMapping("/employees")
-	public ResponseEntity<PageResponse<EmployeeResponse>> getAllEmployees(
-			@RequestParam(required = false) String name,
-			@RequestParam(required = false) String city,
-			@RequestParam(required = false) Integer age,
+	public ResponseEntity<PageResponse<EmployeeResponse>> getAllEmployees(@RequestParam(required = false) String name,
+			@RequestParam(required = false) String city, @RequestParam(required = false) Integer age,
 			@RequestParam(required = false) BigDecimal salary,
 			@PageableDefault(size = 20, sort = "empId") Pageable pageable) {
+		if (pageable.getSort().stream().anyMatch(order -> order.getProperty().contains("["))) {
+			pageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by("empId").ascending());
+		}
 		PageResponse<EmployeeResponse> empPage = employeeService.getAllEmployees(name, city, age, salary, pageable);
 		return ResponseEntity.ok(empPage);
 	}
@@ -68,7 +72,8 @@ public class EmployeeController {
 
 	@Operation(summary = "Replace employee by id")
 	@PutMapping("/employees/{empId}")
-	public ResponseEntity<EmployeeResponse> updateEmployeeById(@PathVariable Long empId, @Valid @RequestBody EmployeeRequest request) {
+	public ResponseEntity<EmployeeResponse> updateEmployeeById(@PathVariable Long empId,
+			@Valid @RequestBody EmployeeRequest request) {
 		EmployeeResponse empDetails = employeeService.updateEmployee(empId, request);
 		return ResponseEntity.ok(empDetails);
 	}
@@ -96,7 +101,8 @@ public class EmployeeController {
 	}
 
 	/**
-	 * @deprecated Use {@code GET /employees?city=} instead. Will be removed in a later release.
+	 * @deprecated Use {@code GET /employees?city=} instead. Will be removed in a
+	 *             later release.
 	 */
 	@Deprecated
 	@GetMapping("/employees/city/{empCity}")
@@ -106,7 +112,8 @@ public class EmployeeController {
 	}
 
 	/**
-	 * @deprecated Use {@code GET /employees?age=} instead. Will be removed in a later release.
+	 * @deprecated Use {@code GET /employees?age=} instead. Will be removed in a
+	 *             later release.
 	 */
 	@Deprecated
 	@GetMapping("/employees/age/{empAge}")
@@ -117,7 +124,8 @@ public class EmployeeController {
 	}
 
 	/**
-	 * @deprecated Use {@code GET /employees?salary=} instead. Will be removed in a later release.
+	 * @deprecated Use {@code GET /employees?salary=} instead. Will be removed in a
+	 *             later release.
 	 */
 	@Deprecated
 	@GetMapping("/employees/salary/{empSalary}")
@@ -128,7 +136,8 @@ public class EmployeeController {
 	}
 
 	/**
-	 * @deprecated Use {@code GET /employees?name=} instead. Will be removed in a later release.
+	 * @deprecated Use {@code GET /employees?name=} instead. Will be removed in a
+	 *             later release.
 	 */
 	@Deprecated
 	@GetMapping("/employees/name/{empName}")
