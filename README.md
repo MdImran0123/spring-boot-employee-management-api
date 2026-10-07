@@ -108,14 +108,23 @@ Or point a fresh empty `employeedb` at the app and let `V1` create the table.
 
 ## Configuration
 
-Set database credentials as environment variables (used by `application.properties`):
+Spring profiles split **shared** settings (`application.properties`) from **dev** and **prod** overrides. Local runs default to the **dev** profile (`spring.profiles.active=dev`).
+
+| Profile | File | Purpose |
+| --- | --- | --- |
+| (shared) | `application.properties` | Flyway, pagination, Actuator exposure, app info |
+| `dev` | `application-dev.properties` | Local MySQL, optional SQL logging, health details visible |
+| `prod` | `application-prod.properties` | `DB_URL` from env, no SQL logging, stricter logging |
+
+Set database credentials as environment variables:
 
 | Variable | Description |
 | --- | --- |
 | `DB_USERNAME` | MySQL username |
 | `DB_PASSWORD` | MySQL password |
+| `DB_URL` | JDBC URL (**prod** profile only; required when `spring.profiles.active=prod`) |
 
-Datasource URL (default):
+**Dev** datasource URL (fixed in `application-dev.properties`):
 
 ```properties
 jdbc:mysql://localhost:3306/employeedb?useSSL=false&serverTimezone=UTC
@@ -139,7 +148,7 @@ export DB_PASSWORD=your_password
 
 ## Run the application
 
-From the `EmployeeAPICRUD` folder:
+From the `EmployeeAPICRUD` folder (uses **dev** profile by default):
 
 ```bash
 ./mvnw spring-boot:run
@@ -149,6 +158,19 @@ Or with Maven installed:
 
 ```bash
 mvn spring-boot:run
+```
+
+**Production profile** (set `DB_URL` plus credentials):
+
+```bash
+export DB_URL='jdbc:mysql://your-host:3306/employeedb?useSSL=true&serverTimezone=UTC'
+./mvnw spring-boot:run -Dspring-boot.run.arguments=--spring.profiles.active=prod
+```
+
+Override profile explicitly for local dev:
+
+```bash
+./mvnw spring-boot:run -Dspring-boot.run.arguments=--spring.profiles.active=dev
 ```
 
 App starts on **`http://localhost:8080`**.
@@ -332,6 +354,8 @@ EmployeeAPICRUD/
 │   ├── repository/EmployeeRepository.java
 │   └── service/EmployeeService.java
 ├── src/main/resources/application.properties
+├── src/main/resources/application-dev.properties
+├── src/main/resources/application-prod.properties
 ├── src/main/resources/db/migration/V1__create_employee.sql
 ├── src/main/resources/db/migration/V2__indexes.sql
 ├── src/main/resources/db/migration/V3__soft_delete.sql
