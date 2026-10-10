@@ -6,6 +6,7 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -19,20 +20,32 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import com.codemyth.config.AppSecurityProperties;
+import com.codemyth.config.CorsConfig;
+import com.codemyth.config.JwtProperties;
+import com.codemyth.config.SecurityConfig;
 import com.codemyth.dto.EmployeeResponse;
 import com.codemyth.dto.PageResponse;
 import com.codemyth.exception.EmployeeNotFoundException;
 import com.codemyth.exception.GlobalExceptionHandler;
+import com.codemyth.security.JwtAuthenticationFilter;
+import com.codemyth.security.JwtService;
+import com.codemyth.security.RestAccessDeniedHandler;
+import com.codemyth.security.RestAuthenticationEntryPoint;
 import com.codemyth.service.EmployeeService;
 
 @WebMvcTest(EmployeeController.class)
-@Import(GlobalExceptionHandler.class)
+@Import({ GlobalExceptionHandler.class, SecurityConfig.class, CorsConfig.class, JwtService.class,
+		JwtAuthenticationFilter.class, RestAuthenticationEntryPoint.class, RestAccessDeniedHandler.class })
+@EnableConfigurationProperties({ JwtProperties.class, AppSecurityProperties.class })
 class EmployeeControllerTest {
 
 	@Autowired
@@ -41,23 +54,46 @@ class EmployeeControllerTest {
 	@MockitoBean
 	private EmployeeService employeeService;
 
+	@MockitoBean
+	private UserDetailsService userDetailsService;
+
 	private static final String VALID_JSON = """
 			{"empName":"Ada","empAge":30,"empCity":"London","empSalary":90000}
 			""";
+
+	@Test
+	void getAllEmployees_returns401_whenUnauthenticated() throws Exception {
+		mockMvc.perform(get("/api/v1/employees")).andExpect(status().isUnauthorized())
+				.andExpect(jsonPath("$.message").value("Authentication required"));
+	}
+
+	@Test
+	void createEmployee_returns401_whenUnauthenticated() throws Exception {
+		mockMvc.perform(post("/api/v1/employees").contentType(MediaType.APPLICATION_JSON).content(VALID_JSON))
+				.andExpect(status().isUnauthorized()).andExpect(jsonPath("$.message").value("Authentication required"));
+	}
+
+	@Test
+	void createEmployee_returns403_whenViewer() throws Exception {
+		mockMvc.perform(post("/api/v1/employees").with(user("viewer").roles("VIEWER"))
+				.contentType(MediaType.APPLICATION_JSON).content(VALID_JSON)).andExpect(status().isForbidden());
+	}
 
 	@Test
 	void createEmployee_returns201() throws Exception {
 		when(employeeService.createEmployee(any()))
 				.thenReturn(new EmployeeResponse(1L, "Ada", 30, "London", new BigDecimal("90000")));
 
-		mockMvc.perform(post("/api/v1/employees").contentType(MediaType.APPLICATION_JSON).content(VALID_JSON))
+		mockMvc.perform(post("/api/v1/employees").with(user("editor").roles("EDITOR"))
+				.contentType(MediaType.APPLICATION_JSON).content(VALID_JSON))
 				.andExpect(status().isCreated()).andExpect(jsonPath("$.empId").value(1))
 				.andExpect(jsonPath("$.empName").value("Ada"));
 	}
 
 	@Test
 	void createEmployee_returns400_whenNameBlank() throws Exception {
-		mockMvc.perform(post("/api/v1/employees").contentType(MediaType.APPLICATION_JSON).content("""
+		mockMvc.perform(post("/api/v1/employees").with(user("editor").roles("EDITOR"))
+				.contentType(MediaType.APPLICATION_JSON).content("""
 				{"empName":"","empAge":30,"empCity":"London","empSalary":90000}
 				""")).andExpect(status().isBadRequest()).andExpect(jsonPath("$.status").value(400))
 				.andExpect(jsonPath("$.error").value("Bad Request"))
@@ -67,7 +103,8 @@ class EmployeeControllerTest {
 
 	@Test
 	void createEmployee_returns400_whenAgeInvalid() throws Exception {
-		mockMvc.perform(post("/api/v1/employees").contentType(MediaType.APPLICATION_JSON).content("""
+		mockMvc.perform(post("/api/v1/employees").with(user("editor").roles("EDITOR"))
+				.contentType(MediaType.APPLICATION_JSON).content("""
 				{"empName":"Ada","empAge":17,"empCity":"London","empSalary":90000}
 				""")).andExpect(status().isBadRequest()).andExpect(jsonPath("$.status").value(400))
 				.andExpect(jsonPath("$.errors.empAge").value("Employee age must be at least 18"));
@@ -75,7 +112,8 @@ class EmployeeControllerTest {
 
 	@Test
 	void createEmployee_returns400_whenSalaryMissing() throws Exception {
-		mockMvc.perform(post("/api/v1/employees").contentType(MediaType.APPLICATION_JSON).content("""
+		mockMvc.perform(post("/api/v1/employees").with(user("editor").roles("EDITOR"))
+				.contentType(MediaType.APPLICATION_JSON).content("""
 				{"empName":"Ada","empAge":30,"empCity":"London"}
 				""")).andExpect(status().isBadRequest()).andExpect(jsonPath("$.status").value(400))
 				.andExpect(jsonPath("$.errors.empSalary").value("Employee salary cannot be null"));
@@ -86,7 +124,7 @@ class EmployeeControllerTest {
 		when(employeeService.getAllEmployees(any(), any(), any(), any(), any())).thenReturn(new PageResponse<>(
 				List.of(new EmployeeResponse(1L, "Ada", 30, "London", new BigDecimal("90000"))), 0, 20, 1, 1));
 
-		mockMvc.perform(get("/api/v1/employees")).andExpect(status().isOk())
+		mockMvc.perform(get("/api/v1/employees").with(user("viewer").roles("VIEWER"))).andExpect(status().isOk())
 				.andExpect(jsonPath("$.content[0].empId").value(1)).andExpect(jsonPath("$.page").value(0))
 				.andExpect(jsonPath("$.size").value(20)).andExpect(jsonPath("$.totalElements").value(1))
 				.andExpect(jsonPath("$.totalPages").value(1));
@@ -98,8 +136,8 @@ class EmployeeControllerTest {
 				.thenReturn(new PageResponse<>(
 						List.of(new EmployeeResponse(1L, "Ada", 30, "London", new BigDecimal("90000"))), 0, 20, 1, 1));
 
-		mockMvc.perform(get("/api/v1/employees").param("name", "Ada").param("city", "London").param("age", "30")
-				.param("salary", "90000")).andExpect(status().isOk())
+		mockMvc.perform(get("/api/v1/employees").with(user("viewer").roles("VIEWER")).param("name", "Ada")
+				.param("city", "London").param("age", "30").param("salary", "90000")).andExpect(status().isOk())
 				.andExpect(jsonPath("$.content[0].empName").value("Ada"));
 	}
 
@@ -108,7 +146,7 @@ class EmployeeControllerTest {
 		when(employeeService.getEmployeeById(1L))
 				.thenReturn(new EmployeeResponse(1L, "Ada", 30, "London", new BigDecimal("90000")));
 
-		mockMvc.perform(get("/api/v1/employees/1")).andExpect(status().isOk())
+		mockMvc.perform(get("/api/v1/employees/1").with(user("viewer").roles("VIEWER"))).andExpect(status().isOk())
 				.andExpect(jsonPath("$.empName").value("Ada"));
 	}
 
@@ -117,8 +155,8 @@ class EmployeeControllerTest {
 		when(employeeService.getEmployeeById(99L))
 				.thenThrow(new EmployeeNotFoundException("No employee found by Id: 99"));
 
-		mockMvc.perform(get("/api/v1/employees/99")).andExpect(status().isNotFound())
-				.andExpect(jsonPath("$.status").value(404))
+		mockMvc.perform(get("/api/v1/employees/99").with(user("viewer").roles("VIEWER")))
+				.andExpect(status().isNotFound()).andExpect(jsonPath("$.status").value(404))
 				.andExpect(jsonPath("$.message").value("No employee found by Id: 99"));
 	}
 
@@ -127,7 +165,8 @@ class EmployeeControllerTest {
 		when(employeeService.updateEmployee(eq(1L), any()))
 				.thenReturn(new EmployeeResponse(1L, "Grace", 40, "NY", new BigDecimal("120000")));
 
-		mockMvc.perform(put("/api/v1/employees/1").contentType(MediaType.APPLICATION_JSON).content("""
+		mockMvc.perform(put("/api/v1/employees/1").with(user("editor").roles("EDITOR"))
+				.contentType(MediaType.APPLICATION_JSON).content("""
 				{"empName":"Grace","empAge":40,"empCity":"NY","empSalary":120000}
 				""")).andExpect(status().isOk()).andExpect(jsonPath("$.empName").value("Grace"));
 	}
@@ -136,22 +175,31 @@ class EmployeeControllerTest {
 	void deleteById_returns204() throws Exception {
 		doNothing().when(employeeService).deleteById(1L);
 
-		mockMvc.perform(delete("/api/v1/employees/1")).andExpect(status().isNoContent());
+		mockMvc.perform(delete("/api/v1/employees/1").with(user("admin").roles("ADMIN")))
+				.andExpect(status().isNoContent());
 		verify(employeeService).deleteById(1L);
+	}
+
+	@Test
+	void deleteById_returns403_whenEditor() throws Exception {
+		mockMvc.perform(delete("/api/v1/employees/1").with(user("editor").roles("EDITOR")))
+				.andExpect(status().isForbidden());
 	}
 
 	@Test
 	void deleteById_returns404_whenMissing() throws Exception {
 		doThrow(new EmployeeNotFoundException("No employee found by Id: 99")).when(employeeService).deleteById(99L);
 
-		mockMvc.perform(delete("/api/v1/employees/99")).andExpect(status().isNotFound());
+		mockMvc.perform(delete("/api/v1/employees/99").with(user("admin").roles("ADMIN")))
+				.andExpect(status().isNotFound());
 	}
 
 	@Test
 	void deleteAll_returns204() throws Exception {
 		doNothing().when(employeeService).deleteAllEmployees();
 
-		mockMvc.perform(delete("/api/v1/employees")).andExpect(status().isNoContent());
+		mockMvc.perform(delete("/api/v1/employees").with(user("admin").roles("ADMIN")))
+				.andExpect(status().isNoContent());
 	}
 
 	@Test
@@ -159,16 +207,16 @@ class EmployeeControllerTest {
 		when(employeeService.getEmployeeByCity("London"))
 				.thenReturn(List.of(new EmployeeResponse(1L, "Ada", 30, "London", new BigDecimal("90000"))));
 
-		mockMvc.perform(get("/api/v1/employees/city/London")).andExpect(status().isOk())
-				.andExpect(jsonPath("$[0].empCity").value("London"));
+		mockMvc.perform(get("/api/v1/employees/city/London").with(user("viewer").roles("VIEWER")))
+				.andExpect(status().isOk()).andExpect(jsonPath("$[0].empCity").value("London"));
 	}
 
 	@Test
 	void getByCity_returns200_withEmptyList_whenNoMatch() throws Exception {
 		when(employeeService.getEmployeeByCity("Nowhere")).thenReturn(List.of());
 
-		mockMvc.perform(get("/api/v1/employees/city/Nowhere")).andExpect(status().isOk())
-				.andExpect(jsonPath("$").isArray()).andExpect(jsonPath("$").isEmpty());
+		mockMvc.perform(get("/api/v1/employees/city/Nowhere").with(user("viewer").roles("VIEWER")))
+				.andExpect(status().isOk()).andExpect(jsonPath("$").isArray()).andExpect(jsonPath("$").isEmpty());
 	}
 
 	@Test
@@ -176,7 +224,8 @@ class EmployeeControllerTest {
 		when(employeeService.getEmployeeByAge(30))
 				.thenReturn(List.of(new EmployeeResponse(1L, "Ada", 30, "London", new BigDecimal("90000"))));
 
-		mockMvc.perform(get("/api/v1/employees/age/30")).andExpect(status().isOk());
+		mockMvc.perform(get("/api/v1/employees/age/30").with(user("viewer").roles("VIEWER")))
+				.andExpect(status().isOk());
 	}
 
 	@Test
@@ -184,7 +233,8 @@ class EmployeeControllerTest {
 		when(employeeService.getEmployeeBySalary(any()))
 				.thenReturn(List.of(new EmployeeResponse(1L, "Ada", 30, "London", new BigDecimal("90000"))));
 
-		mockMvc.perform(get("/api/v1/employees/salary/90000")).andExpect(status().isOk());
+		mockMvc.perform(get("/api/v1/employees/salary/90000").with(user("viewer").roles("VIEWER")))
+				.andExpect(status().isOk());
 	}
 
 	@Test
@@ -192,13 +242,14 @@ class EmployeeControllerTest {
 		when(employeeService.getEmployeeByName("Ada"))
 				.thenReturn(List.of(new EmployeeResponse(1L, "Ada", 30, "London", new BigDecimal("90000"))));
 
-		mockMvc.perform(get("/api/v1/employees/name/Ada")).andExpect(status().isOk())
-				.andExpect(jsonPath("$[0].empName").value("Ada"));
+		mockMvc.perform(get("/api/v1/employees/name/Ada").with(user("viewer").roles("VIEWER")))
+				.andExpect(status().isOk()).andExpect(jsonPath("$[0].empName").value("Ada"));
 	}
 
 	@Test
 	void updateEmployee_returns400_whenNameBlank() throws Exception {
-		mockMvc.perform(put("/api/v1/employees/1").contentType(MediaType.APPLICATION_JSON).content("""
+		mockMvc.perform(put("/api/v1/employees/1").with(user("editor").roles("EDITOR"))
+				.contentType(MediaType.APPLICATION_JSON).content("""
 				{"empName":"","empAge":40,"empCity":"NY","empSalary":120000}
 				""")).andExpect(status().isBadRequest());
 	}
@@ -208,14 +259,16 @@ class EmployeeControllerTest {
 		when(employeeService.patchEmployee(eq(1L), any()))
 				.thenReturn(new EmployeeResponse(1L, "Ada", 30, "Paris", new BigDecimal("90000")));
 
-		mockMvc.perform(patch("/api/v1/employees/1").contentType(MediaType.APPLICATION_JSON).content("""
+		mockMvc.perform(patch("/api/v1/employees/1").with(user("editor").roles("EDITOR"))
+				.contentType(MediaType.APPLICATION_JSON).content("""
 				{"empCity":"Paris"}
 				""")).andExpect(status().isOk()).andExpect(jsonPath("$.empCity").value("Paris"));
 	}
 
 	@Test
 	void updateEmployee_returns400_whenAgeInvalid() throws Exception {
-		mockMvc.perform(put("/api/v1/employees/1").contentType(MediaType.APPLICATION_JSON).content("""
+		mockMvc.perform(put("/api/v1/employees/1").with(user("editor").roles("EDITOR"))
+				.contentType(MediaType.APPLICATION_JSON).content("""
 				{"empName":"Grace","empAge":66,"empCity":"NY","empSalary":120000}
 				""")).andExpect(status().isBadRequest());
 	}

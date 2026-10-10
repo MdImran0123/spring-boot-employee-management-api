@@ -23,6 +23,7 @@ See [docs/ROADMAP.md](docs/ROADMAP.md) for planned improvements.
 - DTO layer (`EmployeeRequest` / `EmployeeResponse`) — JPA entity is not exposed
 - Global `404` handling for missing employees
 - CORS enabled for local frontends on ports `5173` and `3000`
+- JWT authentication and RBAC (`VIEWER` / `EDITOR` / `ADMIN`); employee APIs require `Authorization: Bearer <token>`
 - OpenAPI / Swagger UI via springdoc
 - Actuator health and info endpoints
 - Unit and Web MVC tests
@@ -43,6 +44,7 @@ Database       MySQL (mysql-connector-j)
 Migrations     Flyway
 API docs       springdoc-openapi (Swagger UI)
 Ops            Spring Boot Actuator (health, info)
+Security       Spring Security, JWT (jjwt)
 Build          Maven
 Tests          JUnit 5, Mockito, MockMvc, AssertJ
 ```
@@ -70,7 +72,8 @@ com.codemyth.repository   Spring Data JPA queries
 com.codemyth.model        Employee entity
 com.codemyth.dto          EmployeeRequest, EmployeeResponse
 com.codemyth.exception    EmployeeNotFoundException, GlobalExceptionHandler
-com.codemyth.config       CORS configuration
+com.codemyth.config       CORS, security, JWT properties
+com.codemyth.security     JWT filter and token service
 ```
 
 ---
@@ -123,6 +126,9 @@ Set database credentials as environment variables:
 | `DB_USERNAME` | MySQL username |
 | `DB_PASSWORD` | MySQL password |
 | `DB_URL` | JDBC URL (**prod** profile only; required when `spring.profiles.active=prod`) |
+| `JWT_SECRET` | HMAC secret for JWT signing (min 32 characters; dev has a default) |
+| `APP_USER` | Prod admin username (bootstrapped on startup with `ADMIN` role) |
+| `APP_PASSWORD` | Admin password (**dev**: `admin@dev`; **prod**: matches `APP_USER`) |
 
 **Dev** datasource URL (fixed in `application-dev.properties`):
 
@@ -182,6 +188,55 @@ Actuator exposes only `health` and `info`. Health details stay hidden:
 
 ---
 
+## Authentication and RBAC
+
+1. Obtain a token:
+
+```http
+POST /api/v1/auth/login
+Content-Type: application/json
+
+{"username":"admin@dev","password":"admin123"}
+```
+
+Response:
+
+```json
+{"token":"<jwt>","tokenType":"Bearer","roles":["ADMIN"]}
+```
+
+2. Send **all employee API** requests with:
+
+```http
+Authorization: Bearer <jwt>
+```
+
+**Breaking change:** Employee `GET` endpoints are **no longer public**; you need a valid JWT and an appropriate role.
+
+### Roles (v1)
+
+| Role | Access |
+| --- | --- |
+| `VIEWER` | `GET /api/v1/employees/**` |
+| `EDITOR` | VIEWER + `POST`, `PUT`, `PATCH` |
+| `ADMIN` | EDITOR + `DELETE` (by id and delete-all) |
+
+Users and roles are stored in MySQL (`app_user`, `role`, `user_role`). JPA maps the join with `@ManyToMany` on `AppUser` (no separate `UserRole` entity).
+
+### Dev users (after Flyway V4)
+
+| Username | Password | Role |
+| --- | --- | --- |
+| `viewer@dev` | `viewer123` | VIEWER |
+| `editor@dev` | `editor123` | EDITOR |
+| `admin@dev` | value of `APP_PASSWORD` (default `admin123`) | ADMIN (synced on startup) |
+
+**Public (no token):** `POST /api/v1/auth/login`, Swagger UI, Actuator `health` / `info` only.
+
+The bundled `employee-ui` signs in first, sends Bearer on reads and writes, and hides delete actions unless the user has `ADMIN`.
+
+---
+
 ## API reference
 
 All endpoints are under `/api/v1`.
@@ -213,13 +268,14 @@ Response also includes `empId`:
 
 ```text
 Method     Endpoint                         Description
-POST       /employees                       Create employee
+POST       /auth/login                      Issue JWT (public)
+POST       /employees                       Create employee (auth)
 GET        /employees                       List/search employees (query: name, city, age, salary + page, size, sort)
 GET        /employees/{empId}               Get employee by id
-PUT        /employees/{empId}               Update employee by id
-PATCH      /employees/{empId}               Partial update (only sent fields)
-DELETE     /employees/{empId}               Soft delete employee by id
-DELETE     /employees                       Soft delete all employees
+PUT        /employees/{empId}               Update employee by id (auth)
+PATCH      /employees/{empId}               Partial update (only sent fields) (auth)
+DELETE     /employees/{empId}               Soft delete employee by id (auth)
+DELETE     /employees                       Soft delete all employees (auth)
 GET        /employees/city/{empCity}        Deprecated — use ?city=
 GET        /employees/age/{empAge}          Deprecated — use ?age=
 GET        /employees/salary/{empSalary}    Deprecated — use ?salary=

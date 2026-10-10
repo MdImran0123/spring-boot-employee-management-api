@@ -29,7 +29,7 @@ Already in place:
 - Unit and Web MVC tests
 - Global handler for `EmployeeNotFoundException` (404)
 
-Gaps this roadmap addresses: validation error body, pagination, path-heavy search, empty list → 404, migrations, mapping, soft delete, PATCH, logging, OpenAPI, Actuator, profiles, JWT security, Docker, Testcontainers.
+Gaps this roadmap addresses: validation error body, pagination, path-heavy search, empty list → 404, migrations, mapping, soft delete, PATCH, logging, OpenAPI, Actuator, profiles, JWT security, RBAC (roles on JWT, DB users), Docker, Testcontainers.
 
 ```text
 Client
@@ -187,6 +187,8 @@ Run example: `--spring.profiles.active=dev`
 
 ## Phase 4 — Security & ops
 
+4.1 authentication; 4.2 authorization; 4.3–4.4 deployment and integration testing.
+
 ### 4.1 Spring Security + JWT
 
 **Why:** Open write/delete endpoints (especially `DELETE /employees`) are unsafe on any shared network.
@@ -198,7 +200,60 @@ Run example: `--spring.profiles.active=dev`
 - `POST /api/v1/auth/login` issues JWT (in-memory user acceptable for v1; DB users later)
 - CORS remains for `5173` / `3000` and allows `Authorization`
 
-### 4.2 Docker
+### 4.2 Role-based access control (RBAC)
+
+**Why:** Phase 4.1 only distinguishes anonymous vs authenticated; every logged-in user can POST, PUT, PATCH, and DELETE. You need **authenticated reads** and **different powers per role** (for example who may delete one employee vs delete-all).
+
+**Note:** 4.1 remains done; 4.2 is a **breaking change for anonymous clients** on employee GET endpoints and refines authorization without replacing JWT login.
+
+**What (chosen approach):**
+
+Roles (v1):
+
+```text
+Role     Employee API access
+VIEWER   GET /api/v1/employees/** (list, search, by id, deprecated path GETs)
+EDITOR   VIEWER + POST, PUT, PATCH
+ADMIN    EDITOR + DELETE /employees/{id} and DELETE /employees (delete-all)
+```
+
+**Auth / token:**
+
+- Extend JWT to carry roles (e.g. `roles` claim or Spring-standard authorities).
+- Update `JwtAuthenticationFilter` to set `GrantedAuthority` from the token (today: hardcoded `ROLE_USER`).
+- Remove broad `permitAll` on `GET /api/v1/employees/**` in `SecurityConfig`; require authentication for all employee endpoints.
+- Primary enforcement: `@EnableMethodSecurity` + `@PreAuthorize` on `EmployeeController` methods (clear per-endpoint rules).
+
+**Users and roles storage (builds on 4.1 “DB users later”):**
+
+- Flyway `V4__users_and_roles.sql`: `app_user`, `role`, `user_role` (or equivalent); BCrypt passwords; seed dev users (e.g. `viewer@dev`, `editor@dev`, `admin@dev`).
+- JPA **Option 1:** `AppUser` `@ManyToMany` `Role` via `@JoinTable(name = "user_role")` — no `UserRole` entity.
+- Replace `InMemoryUserDetailsManager` with JPA `UserDetailsService` loading roles from DB.
+- `POST /api/v1/auth/login`: unchanged path; response may add optional `roles` array for clients (document in README when implemented).
+
+**Public without JWT (unchanged ops/docs):**
+
+- `POST /api/v1/auth/login`
+- Actuator `health` / `info`
+- Swagger / OpenAPI UI paths (same as 4.1)
+
+**API errors:**
+
+- Reuse existing JSON **401** (no or invalid token) and **403** (`RestAccessDeniedHandler`) for wrong role.
+
+**Tests:**
+
+- WebMvc: VIEWER → GET 200, POST 403; EDITOR → PATCH 200, DELETE 403; ADMIN → delete-all 204.
+- Login issues a token whose roles match the DB user.
+
+**Client / docs (when 4.2 lands):**
+
+- `employee-ui`: attach Bearer on **GET** as well as writes; optional UI (hide Delete All unless admin).
+- README: role matrix, sample users, breaking change note (“reads no longer public”).
+
+**Touch:** `SecurityConfig`, `JwtService`, `JwtAuthenticationFilter`, `AuthController`; new user/role entities, repositories, Flyway V4; `EmployeeController` (+ security annotations); tests (`EmployeeControllerTest`, `AuthControllerTest`, RBAC cases); README, `employee-ui`.
+
+### 4.3 Docker
 
 **Why:** One-command local stack; closer to deployment.
 
@@ -208,7 +263,7 @@ Run example: `--spring.profiles.active=dev`
 - `docker-compose.yml`: MySQL + app, `DB_*` via env
 - `.env.example` only (no real secrets in git)
 
-### 4.3 Testcontainers
+### 4.4 Testcontainers
 
 **Why:** Unit/WebMvc tests alone do not prove Flyway + real MySQL behavior.
 
@@ -223,11 +278,11 @@ EmployeeAPICRUD/
   docs/
     ROADMAP.md
   src/main/resources/
-    db/migration/          # Phase 2
+    db/migration/          # Phase 2; V4__users_and_roles.sql (Phase 4.2)
     application.properties
     application-dev.properties
     application-prod.properties
-  Dockerfile               # Phase 4
+  Dockerfile               # Phase 4.3
   docker-compose.yml
   .env.example
 ```
@@ -239,7 +294,7 @@ EmployeeAPICRUD/
 1. **Phase 1** — validation handler, empty → `[]`, pagination, query-param search (+ tests)
 2. **Phase 2** — Flyway, indexes, records, MapStruct, soft delete, PATCH
 3. **Phase 3** — logging, OpenAPI, Actuator, profiles
-4. **Phase 4** — JWT security, Docker, Testcontainers
+4. **Phase 4** — JWT (4.1), RBAC (4.2), Docker (4.3), Testcontainers (4.4)
 5. After each breaking phase: update `employee-ui` and `README.md`
 
 ---
@@ -262,6 +317,7 @@ Use this when starting each phase:
 - [x] Phase 3.2 springdoc-openapi
 - [x] Phase 3.3 Actuator
 - [x] Phase 3.4 Profiles
-- [ ] Phase 4.1 JWT security
-- [ ] Phase 4.2 Docker / Compose
-- [ ] Phase 4.3 Testcontainers
+- [x] Phase 4.1 JWT security
+- [x] Phase 4.2 RBAC
+- [ ] Phase 4.3 Docker / Compose
+- [ ] Phase 4.4 Testcontainers
