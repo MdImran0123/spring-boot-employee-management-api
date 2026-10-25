@@ -1,7 +1,5 @@
 package com.codemyth.config;
 
-import java.util.Set;
-
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.env.Environment;
@@ -58,7 +56,9 @@ public class AdminAccountBootstrap {
 		});
 
 		admin.setPasswordHash(passwordEncoder.encode(securityProperties.bootstrap().password()));
-		admin.setRoles(Set.of(adminRole));
+		// Mutate the managed collection in place; an immutable Set breaks Hibernate's merge
+		admin.getRoles().clear();
+		admin.getRoles().add(adminRole);
 		appUserRepository.save(admin);
 	}
 }

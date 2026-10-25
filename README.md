@@ -188,6 +188,34 @@ Actuator exposes only `health` and `info`. Health details stay hidden:
 
 ---
 
+## Docker (MySQL + app)
+
+One-command stack from the `EmployeeAPICRUD` folder:
+
+1. Copy [`.env.example`](.env.example) to `.env` and set passwords and `JWT_SECRET` (min 32 characters).
+2. Build and start:
+
+```bash
+docker compose up --build
+```
+
+3. API: **`http://localhost:8080`** (Spring **prod** profile; Flyway runs on startup).
+
+| Service | Port | Notes |
+| --- | --- | --- |
+| `app` | 8080 | Built from multi-stage `Dockerfile` (Maven → JRE 21) |
+| `mysql` | 3306 | Database `employeedb`; credentials from `DB_*` in `.env` |
+
+The app container receives `DB_URL` pointing at the `mysql` service. Admin user is bootstrapped from `APP_USER` / `APP_PASSWORD` (see [Authentication and RBAC](#authentication-and-rbac)).
+
+Stop and remove containers (keep data volume):
+
+```bash
+docker compose down
+```
+
+---
+
 ## Authentication and RBAC
 
 1. Obtain a token:
@@ -419,6 +447,9 @@ EmployeeAPICRUD/
 │   ├── controller/EmployeeControllerTest.java
 │   ├── dto/EmployeeRequestValidationTest.java
 │   └── service/EmployeeServiceTest.java
+├── Dockerfile
+├── docker-compose.yml
+├── .env.example
 ├── pom.xml
 └── README.md
 ```
